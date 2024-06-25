@@ -155,9 +155,37 @@ class Score:
         self.rct.centery = HEIGHT-50
         self.rct.centerx = 100
 
+
     def update(self, screen: pg.Surface):
         self.img = self.fonto.render(f"スコア:{self.score}", 0, (0, 0, 255))
         screen.blit(self.img, self.rct)
+        
+
+class Explosion:
+    """
+    爆弾の爆発に関するクラス
+    """
+    img = pg.image.load("fig/explosion.gif")
+    fimg = pg.transform.flip(img,True,True)
+    imgs = [img,fimg]
+    def __init__(self,bomb:Bomb):
+        """
+        爆弾の初期化
+        引数 bomb:爆発した爆弾のrect
+        """
+        self.imgs = __class__.imgs
+        self.rct = self.imgs[0].get_rect()
+        self.rct.center = bomb.rct.center
+        self.life = 30
+        self.index = 0
+    def update(self,screen:pg.Surface):
+        self.life -= 1
+        if self.life >= 0:
+            screen.blit(self.imgs[self.index],self.rct)
+            if self.index == 0:
+                self.index = 1
+            else:
+                self.index = 0
 
 
 
@@ -172,6 +200,7 @@ def main():
     beams=[]#beamが入る予定のリスト
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
     score=Score(0)
+    el=[]
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -195,12 +224,15 @@ def main():
                 if bombs[i] is not None:
                     if beams[j] is not None:
                         if bombs[i].rct.colliderect(beams[j].rct):
+                            el.append(Explosion(bombs[i]))
                             bombs[i] = None
                             beams[j]= None
                             score.score+=1
                             bird.change_img(6, screen)
         bombs = [bomb for bomb in bombs if bomb is not None]#NONEになったbombが入っていないリスト
         beams = [beam for beam in beams if beam is not None]#Noneになったbeamが入っていないリスト
+        el= [i for i in el if i.life >= 0]
+
 
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
@@ -211,6 +243,8 @@ def main():
         if bombs is not None:
             for bomb in bombs:
                 bomb.update(screen)
+        for i in el:
+            i.update(screen)
         beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]
         score.update(screen)
         pg.display.update()
