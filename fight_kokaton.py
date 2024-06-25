@@ -144,7 +144,7 @@ class Score:
     """
     クラスを表示するクラス
     """
-    def __init__(self, score):
+    def __init__(self, score:int):
         """
         クラスを初期化する関数
         """
