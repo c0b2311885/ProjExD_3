@@ -3,6 +3,7 @@ import random
 import sys
 import time
 import pygame as pg
+import math
 
 
 WIDTH = 1100  # ゲームウィンドウの幅
@@ -48,6 +49,7 @@ class Bird:
         (+5, +5): pg.transform.rotozoom(img, -45, 0.9),  # 右下
     }
 
+
     def __init__(self, xy: tuple[int, int]):
         """
         こうかとん画像Surfaceを生成する
@@ -56,6 +58,7 @@ class Bird:
         self.img = __class__.imgs[(+5, 0)]
         self.rct: pg.Rect = self.img.get_rect()
         self.rct.center = xy
+        self.dire=(+5,0)#こうかとんの向きを表すタプル
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -65,6 +68,8 @@ class Bird:
         """
         self.img = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 0.9)
         screen.blit(self.img, self.rct)
+
+
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
@@ -82,6 +87,8 @@ class Bird:
             self.rct.move_ip(-sum_mv[0], -sum_mv[1])
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.img = __class__.imgs[tuple(sum_mv)]
+        if sum_mv != [0,0]:
+            self.dire=sum_mv
         screen.blit(self.img, self.rct)
 
 
@@ -94,11 +101,17 @@ class Beam:
         ビーム画像Surfaceを生成する
         引数 bird：ビームを放つこうかとん（Birdインスタンス）
         """
-        self.img = pg.image.load(f"fig/beam.png")
-        self.rct = self.img.get_rect()
+        self.firstimg = pg.image.load(f"fig/beam.png")
+        self.rct = self.firstimg.get_rect()
         self.rct.centery = bird.rct.centery  # こうかとんの中心縦座標をビームの中心縦座標に設定
         self.rct.left = bird.rct.right  # こうかとん右座標をビーム左座標に設定
-        self.vx, self.vy = +5, 0
+        self.vx, self.vy = bird.dire[0], bird.dire[1] #こうかとんが向いている方向を代入
+        self.angle = math.degrees(math.atan2(-self.vy, self.vx))
+        self.img=pg.transform.rotozoom(self.firstimg,self.angle,1)
+        kk_rct=bird.rct
+        self.rct.centerx= kk_rct.centerx+kk_rct.width*self.vx/5
+        self.rct.centery= kk_rct.centery+kk_rct.height*self.vy/5
+
 
     def update(self, screen: pg.Surface):
         """
@@ -193,7 +206,6 @@ def main():
             for bomb in bombs:
                 bomb.update(screen)
         beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]
-        print(beams)
         pg.display.update()
         tmr += 1
         clock.tick(50)
