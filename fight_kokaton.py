@@ -140,6 +140,26 @@ class Bomb:
         self.rct.move_ip(self.vx, self.vy)
         screen.blit(self.img, self.rct)
 
+class Score:
+    """
+    クラスを表示するクラス
+    """
+    def __init__(self, score):
+        """
+        クラスを初期化する関数
+        """
+        self.score = score
+        self.fonto = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+        self.img = self.fonto.render(f"スコア:{self.score}", 0, (0, 0, 255))
+        self.rct = self.img.get_rect()
+        self.rct.centery = HEIGHT-50
+        self.rct.centerx = 100
+
+    def update(self, screen: pg.Surface):
+        self.img = self.fonto.render(f"スコア:{self.score}", 0, (0, 0, 255))
+        screen.blit(self.img, self.rct)
+
+
 
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
@@ -151,6 +171,7 @@ def main():
     # bomb = Bomb((255, 0, 0), 10)
     beams=[]#beamが入る予定のリスト
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
+    score=Score(0)
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -176,12 +197,10 @@ def main():
                         if bombs[i].rct.colliderect(beams[j].rct):
                             bombs[i] = None
                             beams[j]= None
+                            score.score+=1
                             bird.change_img(6, screen)
         bombs = [bomb for bomb in bombs if bomb is not None]#NONEになったbombが入っていないリスト
         beams = [beam for beam in beams if beam is not None]#Noneになったbeamが入っていないリスト
-
-
-    
 
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
@@ -193,7 +212,7 @@ def main():
             for bomb in bombs:
                 bomb.update(screen)
         beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]
-        print(beams)
+        score.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
