@@ -4,9 +4,10 @@ import sys
 import time
 import pygame as pg
 
-NUM_OF_BOMBS=5 #爆弾の個数
+
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
+NUM_OF_BOMBS = 5  # 爆弾の個数
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -16,7 +17,7 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     引数：こうかとんや爆弾，ビームなどのRect
     戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
     """
-    yoko, tate = True, True#truetrue
+    yoko, tate = True, True
     if obj_rct.left < 0 or WIDTH < obj_rct.right:
         yoko = False
     if obj_rct.top < 0 or HEIGHT < obj_rct.bottom:
@@ -95,8 +96,8 @@ class Beam:
         """
         self.img = pg.image.load(f"fig/beam.png")
         self.rct = self.img.get_rect()
-        self.rct.centery = bird.rct.centery
-        self.rct.left = bird.rct.right
+        self.rct.centery = bird.rct.centery  # こうかとんの中心縦座標をビームの中心縦座標に設定
+        self.rct.left = bird.rct.right  # こうかとん右座標をビーム左座標に設定
         self.vx, self.vy = +5, 0
 
     def update(self, screen: pg.Surface):
@@ -145,10 +146,11 @@ def main():
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bird = Bird((300, 200))
-    beam=None
-    #bomb = Bomb((255, 0, 0), 10)
-    bombs=[Bomb((255,0 ,0),10) for i in range(NUM_OF_BOMBS)]
-
+    beam = None
+    bomb=None
+    # bomb = Bomb((255, 0, 0), 10)
+    beams=[]#beamが入る予定のリスト
+    bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -157,36 +159,41 @@ def main():
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 # スペースキー押下でBeamクラスのインスタンス生成
-                beam = Beam(bird)         
+                beams.append(Beam(bird))
         screen.blit(bg_img, [0, 0])
         
         for bomb in bombs:
-            if bomb is not None:   
-                if bird.rct.colliderect(bomb.rct):
-                    # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
-                    fonto = pg.font.Font(None, 80)
-                    txt = fonto.render("Game Over", True, (255, 0, 0))
-                    screen.blit(txt, [WIDTH/2-150, HEIGHT/2])
-                    pg.display.update()
-                    time.sleep(5)
-                    return
-        
-        for i,bomb in enumerate(bombs):
-            if bomb is not None:
-                if beam is not None:
-                    if beam.rct.colliderect(bomb.rct):
-                        beam=None
-                        bomb=None
-                        bird.change_img(6,screen)
-        bombs=[bomb for bomb in bombs if bomb is not None]
+            if bird.rct.colliderect(bomb.rct):
+                # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
+                bird.change_img(8, screen)
+                pg.display.update()
+                time.sleep(1)
+                return
+        for j in range(len(beams)):
+            for i in range(len(bombs)):
+                if bombs[i] is not None:
+                    if beams[j] is not None:
+                        if bombs[i].rct.colliderect(beams[j].rct):
+                            bombs[i] = None
+                            beams[j]= None
+                            bird.change_img(6, screen)
+        bombs = [bomb for bomb in bombs if bomb is not None]#NONEになったbombが入っていないリスト
+        beams = [beam for beam in beams if beam is not None]#Noneになったbeamが入っていないリスト
 
+
+    
 
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
-        if beam is not None:
-            beam.update(screen) 
-        for bomb in bombs:
-            bomb.update(screen)
+        if beams is not None:
+            for beam in beams:
+                beam.update(screen)
+        
+        if bombs is not None:
+            for bomb in bombs:
+                bomb.update(screen)
+        beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]
+        print(beams)
         pg.display.update()
         tmr += 1
         clock.tick(50)
